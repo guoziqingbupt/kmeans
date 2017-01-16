@@ -14,5 +14,8 @@ def main(fileName, k):
         print("**********************")
 
 
+# two datasets, one is small, one is large
 if __name__ == "__main__":
-    main("k_meansData.csv", 4)
+
+    # "k_meansData.csv"
+    main("testData.csv", 3)

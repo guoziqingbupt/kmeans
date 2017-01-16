@@ -3,7 +3,7 @@ import numpy as np
 
 
 class Family(object):
-    """docstring for Family"""
+
     def __init__(self, center):
 
         self.center = center
@@ -11,10 +11,12 @@ class Family(object):
 
     def addObj(self, obj):
 
+        # add objects to family
         self.objList.append(obj)
 
     def reGetCenter(self):
 
+        # get means
         self.center = sum(np.array(self.objList)[:]) / len(self.objList)
 
 
@@ -81,25 +83,27 @@ def helper(data, families, Next):
 
 def kmeans(data, k):
 
+    # select k centers randomly
     kcenters = random.sample(data, k)
-    families = []
 
     # constructing families
+    families = []
     for center in kcenters:
 
         families.append(Family(center))
 
+    # Next: whether to execute or not
     Next = True
-
     setup(data, families)
 
     while Next:
 
         Next = False
-        Next = helper(data, families, Next)
 
         for family in families:
             family.reGetCenter()
+
+        Next = helper(data, families, Next)
 
     return families
 
