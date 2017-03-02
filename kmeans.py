@@ -1,115 +1,129 @@
 import random
-import numpy as np
+from definitions import *
 
 
-class Family(object):
-
-    def __init__(self, center):
-
-        self.center = center
-        self.objList = []
-
-    def addObj(self, obj):
-
-        # add objects to family
-        self.objList.append(obj)
-
-    def reGetCenter(self):
-
-        # get means
-        self.center = sum(np.array(self.objList)[:]) / len(self.objList)
-
-
-def setup(data, families):
+def cluster(data, families):
     """
-    Assigning the data items into families for the first time
-    :param data: source data
-    :param families: the families generated in initialization
+    make each data item into each families; assign the distance of the item and its center
+    :param data: a list contained data items
+    :param families: contains the center and the list of data items
     :return: None
     """
 
-    # Finding the family that the data item with min distance
-    for item in data:
-    
-        # initializing the min distance and
-        min_dis = distance(item, families[0].center)
-        min_family = families[0]
-        
-        for family in families:
-            tempDis = distance(item, family.center)
-
-            if tempDis < min_dis:
-                min_dis = tempDis
-                min_family = family
-
-        min_family.addObj(item)
-
-
-def helper(data, families, Next):
-    """
-    iteration function
-    :param data:
-    :param families:
-    :param Next: determining whether to execute the next iteration or not
-    :return:
-    """
-
     for item in data:
 
-        min_dis = distance(item, families[0].center)
-        min_family = families[0]
-        tempFamily = None
+        # Initialize:
+        item.minDis = dis(item.dataVector, families[0].center)
+        minIndex = 0
+        count = 1
 
-        for family in families:
+        # find the family for one data item
+        for family in families[1:]:
 
-            if item in family.objList:
-                tempFamily = family
+            temp = dis(item.dataVector, family.center)
+            if temp < item.minDis:
 
-            tempDis = distance(item, family.center)
+                # update the item's min distance,
+                item.minDis = temp
+                minIndex = count
+            count += 1
 
-            if tempDis < min_dis:
-
-                min_dis = tempDis
-                min_family = family
-
-        if item not in min_family.objList:
-
-            min_family.objList.append(item)
-            tempFamily.objList.remove(item)
-            Next = True
-
-    return Next
+        # add the data item into the family
+        families[minIndex].data.append(item)
 
 
-def kmeans(data, k):
+def kmeans(sourceData, k):
+    """
 
-    # select k centers randomly
-    kcenters = random.sample(data, k)
+    :param sourceData: 2-dimension array
+    :param k:
+    :return:families
+    """
 
-    # constructing families
-    families = []
-    for center in kcenters:
+    # generate data item list
+    data = []
+    for i in sourceData:
+        data.append(Item(i))
 
-        families.append(Family(center))
+    # give the initial families, or make centers = random.sample(sourceData, k)
+    centers = ([2, 10], [5, 8], [1, 2])
+    families = [Family(center) for center in centers]
 
-    # Next: whether to execute or not
+    # Next: execute the next iteration or not
     Next = True
-    setup(data, families)
 
     while Next:
 
+        # clear the family's data item list
+        for family in families:
+            family.data.clear()
+
+        # cluster
+        cluster(data, families)
         Next = False
 
         for family in families:
-            family.reGetCenter()
+            if family.updateCenter():
+                Next = True
+    return families
 
-        Next = helper(data, families, Next)
+
+def genCenters(data, k):
+    """
+    generate initialized centers
+    :param data: a list contained data items
+    :param k:
+    :return: families
+    """
+
+    # initialize one center and corresponding families.
+    # Note that random.sample(data, 1) is a list that have one element.
+    c1 = random.sample(data, 1)[0]
+    families = [Family(c1.dataVector)]
+
+    # generate other k - 1 centers and corresponding families
+    for i in range(k - 1):
+
+        cluster(data, families)
+        sumDis = sum([item.minDis for item in data])
+        candidate = None
+
+        # Random is a random number less than sumDis
+        Random = random.uniform(0, sumDis)
+
+        # tempList stores the candidate that has been chosen
+        tempList = []
+
+        while Random > 0:
+            candidate = random.sample(data, 1)[0]
+            while candidate in tempList:
+                candidate = random.sample(data, 1)[0]
+            tempList.append(candidate)
+            Random -= candidate.minDis
+
+        families.append(Family(candidate.dataVector))
 
     return families
 
 
-def distance(obj1, obj2):
+def kmeansPlusPlus(sourceData, k):
 
-    diff = np.array(obj1) - np.array(obj2)
+    data = []
+    for i in sourceData:
+        data.append(Item(i))
 
-    return diff @ diff
+    families = genCenters(data, k)
+
+    Next = True
+    while Next:
+
+        for family in families:
+            family.data.clear()
+
+        cluster(data, families)
+        Next = False
+
+        for family in families:
+            if family.updateCenter():
+                Next = True
+    return families

@@ -2,6 +2,10 @@ import csv
 
 
 def readData(fileName):
+    """
+    :param fileName:
+    :return: a 2-dimensional array
+    """
 
     data = []
 
